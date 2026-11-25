@@ -373,9 +373,11 @@ Examples:
 - model-generated internal events;
 - explicit continuation requests.
 
-Adapters normalize these into observations.
+These are observation sources or input channels, not direct wake authorities. Adapters normalize them into observations.
 
-The source itself need not know whether cognition is warranted.
+Cron, systemd timers, MQTT, webhooks, sensor streams, and similar mechanisms must not directly invoke cognition merely because an event arrived. They only supply material from which low-level features, deltas, and other wake evidence are derived.
+
+Whether cognition is warranted is evaluated endogenously from the resulting maintained state and wake evidence. A source therefore need not know, and must not decide, whether Self-Wake escalates to further feature extraction or higher cognition.
 
 ---
 
