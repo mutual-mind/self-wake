@@ -93,7 +93,7 @@ The **Causal Portfolio Controller (CPC)** is one possible continuation policy. C
 
 A minimal deployment might use a deterministic threshold policy:
 
-> Wake when a monitored variable crosses a boundary.
+> Escalate when maintained state crosses a boundary.
 
 A richer deployment might use CPC to reason over consequence, slack, recoverability, common-cause groups, cut sets, competing opportunities, and exploration preservation.
 
@@ -313,9 +313,9 @@ The system is not required to reach execution, and it need not cease sensing or 
 
 An implementation claiming conformance with self-wake should preserve the following invariants.
 
-### Observation does not imply cognition
+### Observation does not imply escalation
 
-Receiving an event is not equivalent to waking.
+Receiving an event is not equivalent to authorizing or instantiating higher cognition.
 
 ### Cognition does not imply action
 
@@ -367,7 +367,7 @@ Slack preserves optionality; it does not prescribe passivity. A system may delib
 
 A healthy persistent system can remain continuously perceptive while spending most of its time below expensive cognitive and causal-engagement thresholds.
 
-Stable does not mean preferred or terminal. When justified by persistent state, self-wake may sustain, renew, or arrange future activation, including by creating or modifying scheduled or event-driven wake opportunities for another subsystem that carries a longer-running pursuit.
+Stable does not mean preferred or terminal. When justified by persistent state, self-wake may sustain, renew, or arrange future activation, including by scheduling future observation or reevaluation opportunities. A separate subsystem may also use scheduled cognition for a longer-running pursuit; that is compatible with self-wake, but the schedule itself is not a wake authority.
 
 ---
 
@@ -411,9 +411,9 @@ before answering:
 
 ---
 
-## 8. Wake sources
+## 8. Observation sources and input channels
 
-self-wake should support many sources without privileging any one transport.
+self-wake should support many observation sources and input channels without privileging any one transport.
 
 Examples:
 
@@ -582,7 +582,7 @@ A durable trace should be able to reconstruct:
 - what was observed;
 - what changed;
 - which wake candidates existed;
-- why a wake was admitted or rejected;
+- why the relevant activation decision was made, including hold, defer, merge, escalate, or de-escalate;
 - what authority was granted;
 - what cognition produced;
 - what interventions were requested;
@@ -601,12 +601,13 @@ It is part of causal correctness.
 
 A persistent system must assume interruption.
 
-After restart, it should be possible to determine whether a causal commitment was:
+After restart, it should be possible to determine the causal stage of each selected or committed intervention, including whether it was:
 
-- never started;
+- selected but not committed;
+- committed / authorized but not started;
 - started but unresolved;
-- completed but unverified;
-- verified and committed.
+- executed but unverified;
+- verified and closed.
 
 The runtime must not silently repeat an intervention merely because the cognitive process that requested it disappeared.
 
@@ -725,7 +726,7 @@ selfwake/
     authority.py
     runtime.py
     policies/
-        wake.py
+        activation.py
         cpc.py
     cognition/
         base.py
@@ -780,7 +781,7 @@ Before implementation:
 3. define the authority envelope;
 4. define persistence and idempotency requirements;
 5. define minimal conformance tests;
-6. specify extension points for wake and continuation policies;
+6. specify extension points for activation and continuation policies;
 7. specify CPC separately as the first rich reference policy.
 
 Only then should the reference Python package be generated.
