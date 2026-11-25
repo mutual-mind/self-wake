@@ -1,14 +1,14 @@
 # self-wake
 
-**A small runtime protocol for endogenous, bounded, verifiable AI waking.**
+**A small runtime protocol for endogenous, graded, bounded, verifiable AI activation.**
 
-self-wake defines how a persistent AI system can remain mostly quiescent, notice meaningful changes, decide whether cognition is warranted, instantiate only the cognition needed, make bounded causal commitments, verify consequences, and return to quiescence.
+self-wake defines how a persistent AI system can remain continuously perceptive at low cost, notice meaningful changes, endogenously escalate or de-escalate cognition, instantiate only the cognition currently justified, make bounded causal commitments, verify consequences, and return to lower-cost activation.
 
 It is not an agent framework, scheduler, workflow engine, memory system, or model wrapper.
 
 It is the layer that answers a prior question:
 
-> **Should cognition happen now at all; if so, what kind, under what authority, and how do we know what actually happened?**
+> **What level of cognition should be active now; under what authority; and how do we know what actually happened?**
 
 This repository begins with this README intentionally. The protocol should be understandable before there is an implementation.
 
@@ -24,12 +24,11 @@ Persistent autonomous systems need a layer before that.
 
 A self-waking system should be able to:
 
-- observe without invoking expensive cognition;
-- accumulate and metabolize state cheaply;
-- distinguish novelty from noise, echo, and repetition;
-- decide that nothing currently deserves cognition;
-- select an appropriate cognition tier when something does;
-- bound the authority, time, tools, and effect classes of that cognition;
+- continuously perform low-cost sensing, comparison, and state metabolism;
+- use that baseline cognition to distinguish novelty from noise, echo, and repetition;
+- conclude that no escalation beyond the current activation tier is presently justified;
+- select a higher or lower cognition tier when the evidence warrants a transition;
+- bound the authority, time, tools, and effect classes of any escalated cognition;
 - separate proposal from execution when consequences warrant it;
 - verify outcomes independently enough to detect failure or self-confirmation;
 - persist enough state that interruption and restart do not duplicate commitments;
@@ -37,27 +36,34 @@ A self-waking system should be able to:
 
 The central design premise is:
 
-> **Wake is a decision, not merely an event.**
+> **Self-waking is endogenous movement through activation levels, not a binary transition from asleep to awake.**
 
-An event may create a wake candidate. It does not, by itself, require a cognitive run.
+The substrate may remain continuously active at low cost: sensing, normalizing, deduplicating, maintaining cheap state, and detecting novelty. What changes is the amount and kind of cognition instantiated above that substrate.
+
+An event may create a wake candidate. It does not, by itself, require escalation to a higher cognitive tier.
 
 ---
 
 ## 2. Scope
 
-self-wake owns the transition between **quiescent persistence** and **bounded cognition**.
+self-wake owns **endogenous activation control** across a persistent cognitive substrate.
+
+It assumes that some low-cost substrate may remain continuously active. A deployment may realize activation as one stack or as several concurrently active loci over shared state. The protocol governs when a locus should stay at its current level, ascend to more expensive cognition, descend again, or release bounded causal authority.
+
+The protocol does not require a single globally scalar activation tier or serial cognition. Multiple compatible cognitive runs may coexist at different tiers, provided shared resource, authority, and commitment constraints remain coordinated and auditable.
 
 It defines:
 
 1. how observations become state deltas;
 2. how state deltas can produce wake candidates;
 3. how wake candidates are admitted, deferred, merged, suppressed, or rejected;
-4. how an admitted wake receives an authority envelope;
-5. how cognition produces proposals or portfolios;
-6. how execution is bounded;
-7. how outcomes are verified;
-8. how verified transitions update persistent state;
-9. how the system safely returns to quiescence.
+4. how the runtime chooses target activation tiers for admitted activation loci;
+5. how an escalation receives an authority envelope;
+6. how cognition produces proposals or portfolios;
+7. how execution is bounded;
+8. how outcomes are verified;
+9. how verified transitions update persistent state;
+10. how the system de-escalates safely when higher cognition is no longer justified.
 
 self-wake does **not** prescribe:
 
@@ -67,7 +73,7 @@ self-wake does **not** prescribe:
 - a particular scheduler;
 - a particular tool protocol;
 - a particular memory architecture;
-- a particular wake policy;
+- a particular activation policy;
 - a particular planning algorithm;
 - a particular execution backend.
 
@@ -79,15 +85,15 @@ Those are adapters or policies around the protocol.
 
 The **self-wake runtime** determines whether and how cognition becomes active.
 
-A **wake policy** determines how wake candidates are evaluated.
+An **activation policy** determines how wake candidates change the system's activation tier.
 
-A **continuation policy** determines what causal commitments an active cognition should make.
+A **continuation policy** determines which candidate causal moves an active cognition should select, defer, reject, or commit to.
 
 The **Causal Portfolio Controller (CPC)** is one possible continuation policy. CPC is not the definition of self-waking.
 
 A minimal deployment might use a deterministic threshold policy:
 
-> Wake when a monitored variable crosses a boundary.
+> Escalate when maintained state crosses a boundary.
 
 A richer deployment might use CPC to reason over consequence, slack, recoverability, common-cause groups, cut sets, competing opportunities, and exploration preservation.
 
@@ -119,22 +125,39 @@ A candidate should carry enough information to evaluate it without immediately l
 
 Useful fields may include reason, urgency, expected consequence, uncertainty, expiration, estimated cognition cost, common-cause group, recent related wakes, and requested cognition tier.
 
-### WakeDecision
+### ActivationLocus
 
-The runtime's disposition of one or more wake candidates.
+An independently activatable region of cognitive work, such as an objective, question, subsystem, control loop, or cognitive run. Its activation tier may change without requiring all other cognition to change with it.
 
-At minimum:
+A simple deployment may treat the whole system as one activation locus. A richer deployment may maintain several loci concurrently over shared state and bounded resources.
 
-- IGNORE
-- DEFER
-- MERGE
-- WAKE
+### ActivationDecision
 
-A valid WakeDecision may explicitly conclude:
+The runtime's disposition of one or more wake candidates relative to the **current activation tier of the relevant activation locus**. A scalar deployment may treat the whole system as that locus.
 
-> Nothing deserves cognition now.
+Conceptually, an activation decision contains:
+
+- current tier;
+- target tier;
+- reason;
+- applicable authority envelope;
+- hold / debounce / hysteresis metadata.
+
+A policy may:
+
+- remain at the current tier;
+- defer;
+- merge candidates;
+- escalate;
+- de-escalate.
+
+A valid ActivationDecision may explicitly conclude:
+
+> No higher level of cognition is justified for this locus now.
 
 That is a first-class successful outcome.
+
+The term **wake** is retained as shorthand for a meaningful upward transition in activation, not for the beginning of all processing.
 
 ### AuthorityEnvelope
 
@@ -157,19 +180,49 @@ Cognition may act within this envelope. It may not enlarge it.
 
 ### CognitiveRun
 
-A bounded instantiation of cognition created by an admitted wake.
+A bounded instantiation of cognition created by an admitted upward activation transition.
 
 A cognitive run may investigate, estimate, propose, plan, select a portfolio, request execution, or decide that no intervention is justified.
 
-The runtime owns its envelope and lifecycle.
+Multiple cognitive runs may coexist. Their scheduling may be centralized, negotiated, or otherwise deployment-specific; the protocol only requires that each run's envelope and lifecycle remain explicit and that shared constraints cannot be bypassed by concurrency.
+
+The runtime owns each run's envelope and lifecycle.
 
 ### Portfolio
 
-A set of proposed causal commitments considered together rather than independently.
+A set of **candidate causal moves** considered together rather than independently.
 
-A portfolio may contain no interventions, one intervention, several compatible interventions, investigations, reversible experiments, or deferred commitments.
+A portfolio may contain no interventions, one intervention, several compatible interventions, investigations, reversible experiments, deferrals, or other mutually constrained options. Compatible selected items may be instantiated concurrently rather than sequentially.
+
+A portfolio is still deliberative. Inclusion in a portfolio does **not** mean that an item has been authorized or committed to.
 
 The portfolio abstraction is optional for simple policies but central to CPC.
+
+### Commitment
+
+A commitment is an adopted causal course that constrains future choice.
+
+A proposal becomes a commitment only when the system crosses from considering an option to treating some consequence, resource allocation, authority grant, obligation, or execution path as binding enough to preserve across the next transition.
+
+Commitment is therefore stronger than proposal but may precede physical execution.
+
+Examples include:
+
+- authorizing an intervention for execution;
+- reserving scarce budget or capacity for a selected action;
+- creating an external obligation or promise;
+- scheduling an action whose cancellation is itself consequential;
+- selecting one branch in a way that closes or materially reduces alternatives.
+
+A policy is different: a policy is a rule or mapping that may produce different actions under different states. A commitment is a particular adopted causal course under the current state.
+
+A useful lifecycle is:
+
+~~~text
+candidate → portfolio → selected → committed / authorized → executed → outcome → verified
+~~~
+
+Not every selected item must become committed. A portfolio may also select investigation, deferral, or deliberate non-action.
 
 ### Intervention
 
@@ -199,59 +252,60 @@ This is the point at which the runtime may safely revise its persistent model of
 
 ## 5. Governing cycle
 
+The protocol is better understood as an **activation ladder** than an on/off wake switch.
+
 ~~~text
-              ┌──────────────────┐
-              │      WORLD       │
-              └────────┬─────────┘
-                       │
-                 observations
-                       │
-                       ▼
-              ┌──────────────────┐
-              │ STATE METABOLISM │
-              └────────┬─────────┘
-                       │
-                  state deltas
-                       │
-                       ▼
-              ┌──────────────────┐
-              │ WAKE CANDIDATES  │
-              └────────┬─────────┘
-                       │
-                  wake policy
-                       │
-          ┌────────────┼────────────┐
-          │            │            │
-          ▼            ▼            ▼
-       ignore        defer         wake
-          │            │            │
-          └──────► quiescence       ▼
-                                ┌───────────────┐
-                                │ COGNITIVE RUN │
-                                └───────┬───────┘
-                                        │
-                              proposal / portfolio
-                                        │
-                       ┌────────────────┼───────────────┐
-                       │                │               │
-                       ▼                ▼               ▼
-                    no-op          investigate       execute
-                       │                │               │
-                       └────────────────┼───────────────┘
-                                        ▼
-                                ┌──────────────┐
-                                │ VERIFICATION │
-                                └───────┬──────┘
-                                        │
-                               verified transition
-                                        │
-                                        ▼
-                                      WORLD
+                         WORLD
+                           │
+                    continuous sensing
+                           │
+                           ▼
+                 ┌──────────────────┐
+                 │  STATE METABOLISM │  ← low-cost, continuously active
+                 └─────────┬────────┘
+                           │
+                      state deltas
+                           │
+                           ▼
+                 ┌──────────────────┐
+                 │ WAKE CANDIDATES  │
+                 └─────────┬────────┘
+                           │
+                     activation policy
+                           │
+             ┌─────────────┼─────────────┐
+             │             │             │
+             ▼             ▼             ▼
+           hold          ascend        descend
+             │             │             │
+             │      ┌──────▼───────┐     │
+             │      │ COGNITIVE TIER│◄────┘
+             │      └──────┬───────┘
+             │             │
+             │      proposal / portfolio
+             │             │
+             │    ┌────────┼─────────┐
+             │    │        │         │
+             │    ▼        ▼         ▼
+             │  no-op  investigate  execute
+             │    │        │         │
+             │    └────────┼─────────┘
+             │             ▼
+             │      ┌──────────────┐
+             │      │ VERIFICATION │
+             │      └──────┬───────┘
+             │             │
+             └─────────────┼──────────────► lower-cost activation
+                           │
+                    verified transition
+                           │
+                           ▼
+                         WORLD
 ~~~
 
-There are legitimate exits back to quiescence at multiple stages.
+There are legitimate downward transitions at multiple stages.
 
-The system is not required to reach execution.
+The system is not required to reach execution, and it need not cease sensing or cheap metabolism when higher cognition is inactive.
 
 ---
 
@@ -259,17 +313,17 @@ The system is not required to reach execution.
 
 An implementation claiming conformance with self-wake should preserve the following invariants.
 
-### Observation does not imply cognition
+### Observation does not imply escalation
 
-Receiving an event is not equivalent to waking.
+Receiving an event is not equivalent to authorizing or instantiating higher cognition.
 
 ### Cognition does not imply action
 
 A cognitive run may legitimately conclude that no intervention is justified.
 
-### Wake may conclude in quiescence
+### Activation may remain low or move downward
 
-Ignoring, deferring, suppressing, merging, and no-op cognition are normal protocol outcomes, not failures.
+Holding, deferring, suppressing, merging, de-escalating, and no-op cognition are normal protocol outcomes, not failures.
 
 ### Authority is externally bounded
 
@@ -287,7 +341,7 @@ The runtime must persist enough information to recover the causal stage it had r
 
 ### Replay is possible
 
-Given the same durable inputs and deterministic policy components, wake admission and runtime transitions should be replayable for inspection.
+Given the same durable inputs and deterministic policy components, activation admission and runtime transitions should be replayable for inspection.
 
 Model-dependent cognition may be nondeterministic, but the surrounding causal record must remain inspectable.
 
@@ -307,9 +361,13 @@ The runtime must permit preserving capacity, attention, uncertainty, and future 
 
 It must not structurally force all available budget toward immediate action.
 
-### Quiescence is a stable state
+Slack preserves optionality; it does not prescribe passivity. A system may deliberately spend capacity now, or allocate future cognition, when doing so serves standing commitments, long-horizon goals, exploration, maintenance, or other ends it judges worth pursuing.
 
-A healthy persistent system can spend most of its time doing almost nothing.
+### Low activation is a stable state
+
+A healthy persistent system can remain continuously perceptive while spending most of its time below expensive cognitive and causal-engagement thresholds.
+
+Stable does not mean preferred or terminal. When justified by persistent state, self-wake may sustain, renew, or arrange future activation, including by scheduling future observation or reevaluation opportunities. A separate subsystem may also use scheduled cognition for a longer-running pursuit; that is compatible with self-wake, but the schedule itself is not a wake authority.
 
 ---
 
@@ -353,9 +411,9 @@ before answering:
 
 ---
 
-## 8. Wake sources
+## 8. Observation sources and input channels
 
-self-wake should support many sources without privileging any one transport.
+self-wake should support many observation sources and input channels without privileging any one transport.
 
 Examples:
 
@@ -383,7 +441,7 @@ Whether cognition is warranted is evaluated endogenously from the resulting main
 
 ## 9. State metabolism
 
-State metabolism is the cheap layer between raw observation and wake admission.
+State metabolism is the cheap layer between raw observation and activation admission.
 
 Its purpose is to reduce the amount of expensive cognition needed.
 
@@ -405,34 +463,68 @@ This layer should be able to run continuously or frequently even when no model i
 
 ---
 
-## 10. Wake admission
+## 10. Activation admission
 
-Wake admission asks:
+Activation admission asks:
 
-> **Given the current state, candidate set, budget, and policy, should cognition instantiate now?**
+> **Given the relevant current activation state, maintained state, candidate set, budget, and policy, should this locus hold, ascend, descend, or coexist with other active cognition?**
 
-Admission may consider consequence, urgency, novelty, uncertainty, reversibility, deadline, expected information gain, cognition cost, available slack, overlap with already-running work, common cause, recent wake history, and self-excitation risk.
+Admission need not serialize candidates. It may admit several compatible cognitive runs concurrently, defer some, merge others, or arbitrate shared constraints among them. Resource arbitration may be centralized or negotiated among activation loci, but concurrency does not enlarge any run's authority.
 
-Wake admission should be inspectable.
+Admission may consider consequence, urgency, novelty, uncertainty, reversibility, deadline, expected information gain, cognition cost, available slack, overlap with already-running work, common cause, recent activation history, and self-excitation risk.
 
-For every admitted or rejected candidate, the runtime should be able to preserve a reason sufficient for later audit.
+Policies should support **hysteresis**: escalation and de-escalation need not use identical thresholds. This prevents noisy signals from producing rapid oscillation between cognition tiers.
+
+Activation admission should be inspectable.
+
+For every hold, escalation, or de-escalation, the runtime should be able to preserve a reason sufficient for later audit.
+
+### Epistemic closure is not task closure
+
+Reaching sufficient understanding is not, by itself, a reason to stop all cognition.
+
+Understanding can terminate **epistemic escalation** for a particular uncertainty: the current representation is good enough that finer interpretation is unlikely to change the relevant causal classification.
+
+But the resolved interpretation may itself justify further cognition or action.
+
+For example:
+
+- an unexplained sound may escalate until it is sufficiently identified;
+- if it is identified as a harmless branch fracture, the system may de-escalate;
+- if it is identified as an approaching dangerous animal, epistemic uncertainty may be reduced while planning and causal engagement should escalate.
+
+Therefore, after an uncertainty becomes sufficiently understood, the runtime must still evaluate the consequences of that understanding.
+
+A useful distinction is:
+
+1. **epistemic continuation** — more cognition is needed to determine what is happening;
+2. **instrumental continuation** — what is happening is sufficiently understood, but more cognition is needed to decide what to do;
+3. **causal continuation** — a decision is sufficiently formed and bounded execution is justified;
+4. **de-escalation** — no further cognition or action is currently justified.
+
+Sufficient understanding is therefore a possible stopping condition for one cognitive objective, not a universal stopping condition for the broader activation state.
 
 ---
 
-## 11. Cognition tiers
+## 11. Activation tiers
 
-A runtime may support several cognition tiers, for example:
+A runtime may support several activation tiers, for example:
 
-1. deterministic rule;
-2. cheap classifier;
-3. lightweight model;
-4. deep model;
-5. adversarial or verifier model;
-6. human participation.
+0. sensing and ingestion;
+1. deterministic metabolism and derived state;
+2. cheap attention / classification;
+3. lightweight model cognition;
+4. deep model cognition;
+5. adversarial or verifier cognition;
+6. human participation or other high-cost escalation.
 
-A wake policy may escalate through tiers rather than jumping immediately to the most expensive cognition available.
+The exact ladder is deployment-specific. Not every tier needs a language model.
 
-The protocol does not prescribe the tiers. It requires the chosen tier to be represented in the authority envelope and durable trace.
+Tiers need not form one global ladder. They may apply per objective, subsystem, or cognitive run, so several loci can occupy different tiers simultaneously while sharing state and bounded resources.
+
+An activation policy may move any locus upward or downward through tiers rather than jumping immediately to the most expensive cognition available.
+
+The protocol does not prescribe the tiers, a single global tier, or serial execution. It requires each represented activation transition to preserve its current tier, target tier, granted authority, and enough shared-resource context for later audit.
 
 ---
 
@@ -490,7 +582,7 @@ A durable trace should be able to reconstruct:
 - what was observed;
 - what changed;
 - which wake candidates existed;
-- why a wake was admitted or rejected;
+- why the relevant activation decision was made, including hold, defer, merge, escalate, or de-escalate;
 - what authority was granted;
 - what cognition produced;
 - what interventions were requested;
@@ -509,12 +601,13 @@ It is part of causal correctness.
 
 A persistent system must assume interruption.
 
-After restart, it should be possible to determine whether a causal commitment was:
+After restart, it should be possible to determine the causal stage of each selected or committed intervention, including whether it was:
 
-- never started;
+- selected but not committed;
+- committed / authorized but not started;
 - started but unresolved;
-- completed but unverified;
-- verified and committed.
+- executed but unverified;
+- verified and closed.
 
 The runtime must not silently repeat an intervention merely because the cognitive process that requested it disappeared.
 
@@ -548,7 +641,11 @@ Implementations should therefore track causal provenance sufficiently to disting
 - delayed echoes;
 - state changes produced by the runtime itself.
 
-A wake policy should be able to suppress or discount self-generated echoes while still noticing unexpected consequences.
+An activation policy should suppress or discount self-generated echoes as evidence of novelty or independent confirmation while still noticing unexpected consequences.
+
+Echo suppression must not by itself extinguish a self-sustaining intervention whose original justification remains unresolved. Self-generated recurrence may carry little or no novelty while still indicating unresolved necessity.
+
+Persistence or decay should therefore be conditioned on state: recovery of the protected variable, successful takeover by another mechanism, demonstrated ineffectiveness, or an applicable safety or authority limit. It should not occur merely because time passed or the sustaining activity is self-caused. Homeostatic or survival-critical loops may renew activation while their causal justification remains valid, with hysteresis where needed to avoid premature decay.
 
 ---
 
@@ -556,19 +653,22 @@ A wake policy should be able to suppress or discount self-generated echoes while
 
 A system minimally conforms to the self-wake protocol if it can demonstrate all of the following:
 
-1. observations can be ingested without automatically invoking model cognition;
+1. sensing or cheap state metabolism can continue without invoking higher-cost model cognition;
 2. observations can produce explicit wake candidates;
-3. a wake decision can reject or defer cognition;
-4. an admitted wake receives a bounded authority envelope;
+3. activation decisions can hold, defer, escalate, or de-escalate;
+4. escalation to a higher cognitive tier receives a bounded authority envelope;
 5. cognition can terminate without execution;
 6. consequential interventions have stable identity or equivalent deduplication semantics;
 7. outcomes are distinguished from intended effects;
 8. verification is represented explicitly;
 9. interruption does not require blindly replaying causal commitments;
-10. durable traces are sufficient to inspect why a wake and subsequent transition occurred;
-11. quiescence is treated as a normal persistent state.
+10. durable traces are sufficient to inspect why an activation transition occurred;
+11. low activation is treated as a normal persistent state rather than total inactivity;
+12. the control policy can avoid pathological oscillation between tiers, for example through hysteresis or an equivalent mechanism.
 
 This is intentionally behavioral.
+
+Conformance neither requires nor forbids parallel cognitive runs. A concurrent implementation must preserve the same authority, resource-accounting, commitment, verification, and replay guarantees across simultaneously active loci.
 
 A conforming implementation does not need to use any particular class hierarchy, database, model, or workflow engine.
 
@@ -585,7 +685,7 @@ state metabolizer
   ↓
 candidate store
   ↓
-wake policy
+activation policy
   ↓
 runtime / authority gate
   ↓
@@ -626,7 +726,7 @@ selfwake/
     authority.py
     runtime.py
     policies/
-        wake.py
+        activation.py
         cpc.py
     cognition/
         base.py
@@ -656,7 +756,9 @@ self-wake is not:
 
 A system that merely invokes an agent every N minutes is scheduled cognition, not necessarily self-waking.
 
-The missing property is **endogenous admission**: the system itself evaluates whether current conditions justify cognition, under explicit bounded authority.
+The missing property is **endogenous activation control**: a continuously or intermittently perceptive substrate evaluates whether current conditions justify moving to a different cognition tier, under explicit bounded authority.
+
+Self-wake therefore does not mean that the whole system was previously asleep. It means that the system can regulate its own depth of cognition.
 
 ---
 
@@ -664,7 +766,7 @@ The missing property is **endogenous admission**: the system itself evaluates wh
 
 The protocol should eventually make this question answerable:
 
-> **Given an arbitrary persistent AI system, what must be true for us to say that it is genuinely using self-wake, rather than merely running periodically or reacting to events?**
+> **Given an arbitrary persistent AI system, what must be true for us to say that it is genuinely regulating its own depth of cognition, rather than merely running periodically or reacting to events?**
 
 If two independent implementations can read this specification and agree on the observable answer, the protocol is becoming precise enough.
 
@@ -679,7 +781,7 @@ Before implementation:
 3. define the authority envelope;
 4. define persistence and idempotency requirements;
 5. define minimal conformance tests;
-6. specify extension points for wake and continuation policies;
+6. specify extension points for activation and continuation policies;
 7. specify CPC separately as the first rich reference policy.
 
 Only then should the reference Python package be generated.
