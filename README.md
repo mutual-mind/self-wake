@@ -790,3 +790,6 @@ The README is therefore not downstream documentation.
 
 **For now, the README is the system definition.**
 
+The first deliberately narrow executable slice is documented in
+[`IMPLEMENTATION.md`](IMPLEMENTATION.md). The README remains normative.
+
